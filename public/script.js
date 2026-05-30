@@ -36,9 +36,9 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
 
     const result = await response.json();
     alert(result.message);
+
     if (response.ok) {
-        // ✅ Save student_id or token if you add JWT later
-        localStorage.setItem("student_id", result.student_id);
+        // ✅ No need for localStorage — session is handled by backend
         window.location.href = "/dashboard";
     }
 });
