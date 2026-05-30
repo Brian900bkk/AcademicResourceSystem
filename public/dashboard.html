@@ -1,37 +1,124 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+    <title>Academic Resource Sharing System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Student Dashboard</h1>
 
-        <!-- Upload Notes Section -->
-        <section>
-            <h2>Upload Notes</h2>
-            <form id="uploadNotesForm" enctype="multipart/form-data">
-                <input type="text" id="noteTitle" placeholder="Note Title" required>
-                <input type="file" id="noteFile" required>
-                <button type="submit">Upload</button>
-            </form>
-        </section>
+<div class="dashboard">
 
-        <!-- Search Resources Section -->
-        <section>
-            <h2>Search Resources</h2>
-            <form id="searchForm">
-                <input type="text" id="searchQuery" placeholder="Enter keyword..." required>
-                <button type="submit">Search</button>
-            </form>
-            <div id="results"></div>
-        </section>
+    <header>
+        <h1>Academic Resource Sharing System</h1>
+        <a href="/logout" class="logout-btn">Logout</a>
+    </header>
 
-        <!-- Logout Link -->
-        <p><a href="/login">Logout</a></p>
-    </div>
+    <section class="welcome">
+        <h2>Welcome Student</h2>
+        <p>Manage and share academic resources.</p>
+    </section>
 
-    <script src="script.js"></script>
+    <section class="stats">
+
+        <div class="card">
+            <h3>Total Students</h3>
+            <p id="totalStudents">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Resources</h3>
+            <p id="totalResources">0</p>
+        </div>
+
+    </section>
+
+    <section class="upload-section">
+
+        <h2>Upload Notes</h2>
+
+        <form id="uploadNotesForm" enctype="multipart/form-data">
+
+            <input
+                type="text"
+                id="noteTitle"
+                placeholder="Resource Title"
+                required
+            >
+
+            <input
+                type="file"
+                id="noteFile"
+                required
+            >
+
+            <button type="submit">
+                Upload Resource
+            </button>
+
+        </form>
+
+    </section>
+
+    <section class="search-section">
+
+        <h2>Search Resources</h2>
+
+        <form id="searchForm">
+
+            <input
+                type="text"
+                id="searchQuery"
+                placeholder="Search resources..."
+                required
+            >
+
+            <button type="submit">
+                Search
+            </button>
+
+        </form>
+
+    </section>
+
+    <section>
+
+        <h2>Search Results</h2>
+
+        <div id="results"></div>
+
+    </section>
+
+</div>
+
+<script src="script.js"></script>
+
+<script>
+async function loadStats() {
+
+    try {
+
+        const response = await fetch("/stats");
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        document.getElementById("totalStudents").textContent =
+            data.totalStudents;
+
+        document.getElementById("totalResources").textContent =
+            data.totalResources;
+
+    } catch (err) {
+        console.error(err);
+    }
+
+}
+
+loadStats();
+</script>
+
 </body>
 </html>
+```
