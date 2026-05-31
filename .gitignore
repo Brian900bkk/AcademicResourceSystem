@@ -1,3 +1,11 @@
+# Node.js dependencies
 node_modules/
-uploads/
+
+# Logs
+*.log
+
+# Environment variables
 .env
+
+# Uploads or temp files
+uploads/
