@@ -11,10 +11,10 @@ const PORT = process.env.PORT || 3000;
 
 // Session setup
 app.use(session({
-    secret: "supersecretkey",   // change to something secure
+    secret: "supersecretkey",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }   // true if HTTPS
+    cookie: { secure: false }
 }));
 
 app.use(cors());
@@ -22,33 +22,31 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Database connection pool
 const db = mysql.createPool({
     host: "localhost",
-    user: "root",          // update if you set a password
-    password: "",          // set your MySQL root password here
+    user: "root",
+    password: "",
     database: "academic_resources_system",
-    port: 3306,            // default MySQL port
+    port: 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
-// ✅ Test connection once at startup
 db.getConnection((err, connection) => {
     if (err) {
-        console.error("❌ Database connection failed:", err.message);
+        console.error("Database connection failed:", err.message);
         process.exit(1);
     }
     console.log("✅ Connected to MySQL database.");
     connection.release();
 });
 
-// Multer setup
+// File upload setup
 const upload = multer({ dest: "uploads/" });
 
-// =======================
 // Middleware to protect routes
-// =======================
 function requireLogin(req, res, next) {
     if (!req.session.student_id) {
         return res.redirect("/login");
@@ -56,9 +54,7 @@ function requireLogin(req, res, next) {
     next();
 }
 
-// =======================
 // Routes
-// =======================
 app.get("/", (req, res) => {
     if (req.session.student_id) {
         res.redirect("/dashboard");
@@ -85,12 +81,14 @@ app.get("/logout", (req, res) => {
     });
 });
 
-// =======================
-// Registration
-// =======================
+// Register route
 app.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
+    console.log("Register attempt:", { name, email, password }); // Debug log
     try {
+        if (!password) {
+            return res.status(400).json({ message: "Password is required." });
+        }
         const [results] = await db.promise().query("SELECT * FROM students WHERE email = ?", [email]);
         if (results.length > 0) {
             return res.status(400).json({ message: "Email already in use." });
@@ -102,13 +100,12 @@ app.post("/register", async (req, res) => {
         );
         res.json({ message: "Registration successful! Please login." });
     } catch (err) {
+        console.error("Registration error:", err);
         res.status(500).json({ message: "Registration failed." });
     }
 });
 
-// =======================
-// Login
-// =======================
+// Login route
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -118,19 +115,18 @@ app.post("/login", async (req, res) => {
         }
         const match = await bcrypt.compare(password, results[0].password);
         if (match) {
-            req.session.student_id = results[0].id;  // ✅ save session
+            req.session.student_id = results[0].id;
             res.json({ message: "Login successful!" });
         } else {
             res.status(401).json({ message: "Invalid email or password." });
         }
     } catch (err) {
+        console.error("Login error:", err);
         res.status(500).json({ message: "Login failed." });
     }
 });
 
-// =======================
-// Upload Notes (protected)
-// =======================
+// Upload Notes
 app.post("/upload", requireLogin, upload.single("file"), async (req, res) => {
     const { title } = req.body;
     const file = req.file;
@@ -143,13 +139,12 @@ app.post("/upload", requireLogin, upload.single("file"), async (req, res) => {
         );
         res.json({ message: "File uploaded successfully!" });
     } catch (err) {
+        console.error("Upload error:", err);
         res.status(500).json({ message: "Upload failed." });
     }
 });
 
-// =======================
-// Search Resources (protected)
-// =======================
+// Search resources
 app.get("/search", requireLogin, async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ message: "Search query is required." });
@@ -161,13 +156,12 @@ app.get("/search", requireLogin, async (req, res) => {
         );
         res.json(results);
     } catch (err) {
+        console.error("Search error:", err);
         res.status(500).json({ message: "Search failed." });
     }
 });
 
-// =======================
-// Download Resources (protected)
-// =======================
+// Download resources
 app.get("/download/:id", requireLogin, async (req, res) => {
     const resourceId = req.params.id;
     try {
@@ -178,28 +172,38 @@ app.get("/download/:id", requireLogin, async (req, res) => {
         const filePath = path.join(__dirname, "uploads", file.filename);
         res.download(filePath, file.original_name);
     } catch (err) {
+        console.error("Download error:", err);
         res.status(500).json({ message: "Download failed." });
     }
 });
-app.get("/testdb", async (req, res) => {
+
+// Stats route for dashboard
+app.get("/stats", async (req, res) => {
     try {
-        const [rows] = await db.promise().query("SELECT 1 + 1 AS result");
-        res.json({ message: "✅ DB connected", result: rows[0].result });
+        const [students] = await db.promise().query("SELECT COUNT(*) AS totalStudents FROM students");
+        const [resources] = await db.promise().query("SELECT COUNT(*) AS totalResources FROM resources");
+        res.json({
+            totalStudents: students[0].totalStudents,
+            totalResources: resources[0].totalResources
+        });
     } catch (err) {
-        res.status(500).json({ message: "❌ DB connection failed", error: err.message });
+        console.error("Stats error:", err);
+        res.status(500).json({ message: "Failed to load stats" });
     }
 });
 
+// Test DB connection
+app.get("/testdb", async (req, res) => {
+    try {
+        const [rows] = await db.promise().query("SELECT 1 + 1 AS result");
+        res.json({ message: "DB connected", result: rows[0].result });
+    } catch (err) {
+        console.error("DB connection failed:", err);
+        res.status(500).json({ message: "DB connection failed", error: err.message });
+    }
+});
 
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
-app.get("/testdb", async (req, res) => {
-    try {
-        const [rows] = await db.promise().query("SELECT 1 + 1 AS result");
-        res.json({ message: "✅ DB connected", result: rows[0].result });
-    } catch (err) {
-        res.status(500).json({ message: "❌ DB connection failed", error: err.message });
-    }
 });

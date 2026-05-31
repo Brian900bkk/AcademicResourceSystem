@@ -14,9 +14,12 @@ document.getElementById("registerForm")?.addEventListener("submit", async (e) =>
     });
 
     const result = await response.json();
-    alert(result.message);
+    const messageDiv = document.getElementById("registerMessage");
+    messageDiv.textContent = result.message;
+    messageDiv.style.color = response.ok ? "green" : "red";
+
     if (response.ok) {
-        window.location.href = "/login";
+        setTimeout(() => { window.location.href = "/login"; }, 1500);
     }
 });
 
@@ -35,11 +38,12 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     });
 
     const result = await response.json();
-    alert(result.message);
+    const messageDiv = document.getElementById("loginMessage");
+    messageDiv.textContent = result.message;
+    messageDiv.style.color = response.ok ? "green" : "red";
 
     if (response.ok) {
-        // ✅ No need for localStorage — session is handled by backend
-        window.location.href = "/dashboard";
+        setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
     }
 });
 
@@ -93,7 +97,6 @@ document.getElementById("searchForm")?.addEventListener("submit", async (e) => {
         resultsContainer.appendChild(item);
     });
 
-    // ✅ Keep typed query visible
     queryInput.value = query;
 });
 
@@ -107,7 +110,7 @@ const downloadFile = async (id) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = ""; // backend sets original name
+        a.download = "";
         document.body.appendChild(a);
         a.click();
         a.remove();
