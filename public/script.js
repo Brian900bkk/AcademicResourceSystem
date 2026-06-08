@@ -1,12 +1,38 @@
 // =======================
-// Register
+// Register with validation
 // =======================
 document.getElementById("registerForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("registerEmail").value;
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
     const password = document.getElementById("registerPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword")?.value; // add confirm field in HTML
 
+    const messageDiv = document.getElementById("registerMessage");
+
+    // Custom validation
+    if (name.length < 2) {
+        messageDiv.textContent = "Name must be at least 2 characters.";
+        messageDiv.style.color = "red";
+        return;
+    }
+    if (!email.includes("@") || !email.includes(".")) {
+        messageDiv.textContent = "Please enter a valid email address.";
+        messageDiv.style.color = "red";
+        return;
+    }
+    if (password.length < 6) {
+        messageDiv.textContent = "Password must be at least 6 characters.";
+        messageDiv.style.color = "red";
+        return;
+    }
+    if (confirmPassword && password !== confirmPassword) {
+        messageDiv.textContent = "Passwords do not match.";
+        messageDiv.style.color = "red";
+        return;
+    }
+
+    // Proceed with backend call
     const response = await fetch("/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -14,7 +40,6 @@ document.getElementById("registerForm")?.addEventListener("submit", async (e) =>
     });
 
     const result = await response.json();
-    const messageDiv = document.getElementById("registerMessage");
     messageDiv.textContent = result.message;
     messageDiv.style.color = response.ok ? "green" : "red";
 
@@ -28,8 +53,22 @@ document.getElementById("registerForm")?.addEventListener("submit", async (e) =>
 // =======================
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = document.getElementById("loginEmail").value;
+    const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
+
+    const messageDiv = document.getElementById("loginMessage");
+
+    // Validation
+    if (!email.includes("@") || !email.includes(".")) {
+        messageDiv.textContent = "Please enter a valid email address.";
+        messageDiv.style.color = "red";
+        return;
+    }
+    if (password.length < 6) {
+        messageDiv.textContent = "Password must be at least 6 characters.";
+        messageDiv.style.color = "red";
+        return;
+    }
 
     const response = await fetch("/login", {
         method: "POST",
@@ -38,7 +77,6 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     });
 
     const result = await response.json();
-    const messageDiv = document.getElementById("loginMessage");
     messageDiv.textContent = result.message;
     messageDiv.style.color = response.ok ? "green" : "red";
 
@@ -52,9 +90,21 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
 // =======================
 document.getElementById("uploadNotesForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const title = document.getElementById("noteTitle").value.trim();
+    const file = document.getElementById("noteFile").files[0];
+
+    if (!title) {
+        alert("Please enter a resource title.");
+        return;
+    }
+    if (!file) {
+        alert("Please select a file to upload.");
+        return;
+    }
+
     const formData = new FormData();
-    formData.append("title", document.getElementById("noteTitle").value);
-    formData.append("file", document.getElementById("noteFile").files[0]);
+    formData.append("title", title);
+    formData.append("file", file);
 
     const response = await fetch("/upload", {
         method: "POST",
@@ -72,7 +122,10 @@ document.getElementById("searchForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const queryInput = document.getElementById("searchQuery");
     const query = queryInput.value.trim();
-    if (!query) return;
+    if (!query) {
+        alert("Please enter a search term.");
+        return;
+    }
 
     const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
     const results = await response.json();
@@ -97,7 +150,7 @@ document.getElementById("searchForm")?.addEventListener("submit", async (e) => {
         resultsContainer.appendChild(item);
     });
 
-    queryInput.value = query;
+    queryInput.value = "";
 });
 
 // =======================

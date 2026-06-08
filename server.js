@@ -39,7 +39,7 @@ db.getConnection((err, connection) => {
         console.error("Database connection failed:", err.message);
         process.exit(1);
     }
-    console.log("✅ Connected to MySQL database.");
+    console.log("Connected to MySQL database.");
     connection.release();
 });
 
@@ -84,7 +84,7 @@ app.get("/logout", (req, res) => {
 // Register route
 app.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
-    console.log("Register attempt:", { name, email, password }); // Debug log
+    console.log("Register attempt:", { name, email, password });
     try {
         if (!password) {
             return res.status(400).json({ message: "Password is required." });
