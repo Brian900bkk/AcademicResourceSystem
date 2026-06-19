@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manager Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Manager Dashboard</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </header>
+
+        <section class="welcome">
+            <h2>Welcome Manager</h2>
+            <p>Approve uploads, monitor stats, and manage resources.</p>
+        </section>
+
+        <!-- Pending Uploads -->
+        <section>
+            <h2>Pending Uploads</h2>
+            <p>Review and approve resources submitted by clients.</p>
+            <div id="pendingUploads"></div>
+        </section>
+
+        <!-- Resource Management -->
+        <section>
+            <h2>Resource Management</h2>
+            <p>View, edit, or remove existing resources.</p>
+            <div id="resourceList"></div>
+        </section>
+    </div>
+
+    <script>
+    // Load pending uploads
+    async function loadPendingUploads() {
+        try {
+            const res = await fetch("/pending-uploads");
+            if (!res.ok) {
+                document.getElementById("pendingUploads").innerHTML = "<p>Failed to load pending uploads</p>";
+                return;
+            }
+
+            const data = await res.json();
+            const pendingDiv = document.getElementById("pendingUploads");
+            pendingDiv.innerHTML = "";
+
+            if (data.length === 0) {
+                pendingDiv.innerHTML = "<p>No pending uploads</p>";
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.classList.add("upload-card");
+                div.innerHTML = `
+                    <p><b>${item.title || "Untitled"}</b></p>
+                    <p>${item.original_name}</p>
+                    <button onclick="approveUpload(${item.id})">Approve</button>
+                `;
+                pendingDiv.appendChild(div);
+            });
+        } catch (err) {
+            console.error("Error loading pending uploads:", err);
+        }
+    }
+
+    // Approve upload
+    async function approveUpload(id) {
+        try {
+            const res = await fetch(`/approve-upload/${id}`, { method: "POST" });
+            const data = await res.json();
+            alert(data.message);
+            loadPendingUploads();
+            loadResources();
+        } catch (err) {
+            console.error("Error approving upload:", err);
+        }
+    }
+
+    // Load all resources
+    async function loadResources() {
+        try {
+            const res = await fetch("/resources");
+            if (!res.ok) {
+                document.getElementById("resourceList").innerHTML = "<p>Failed to load resources</p>";
+                return;
+            }
+
+            const data = await res.json();
+            const resourceDiv = document.getElementById("resourceList");
+            resourceDiv.innerHTML = "";
+
+            if (data.length === 0) {
+                resourceDiv.innerHTML = "<p>No resources available</p>";
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.classList.add("resource-card");
+                div.innerHTML = `
+                    <p><b>${item.title || "Untitled"}</b></p>
+                    <p>${item.original_name}</p>
+                    <button onclick="deleteResource(${item.id})">Delete</button>
+                `;
+                resourceDiv.appendChild(div);
+            });
+        } catch (err) {
+            console.error("Error loading resources:", err);
+        }
+    }
+
+    // Delete resource
+    async function deleteResource(id) {
+        try {
+            const res = await fetch(`/delete-resource/${id}`, { method: "DELETE" });
+            const data = await res.json();
+            alert(data.message);
+            loadResources();
+        } catch (err) {
+            console.error("Error deleting resource:", err);
+        }
+    }
+
+    // Initial load
+    loadPendingUploads();
+    loadResources();
+    </script>
+</body>
+</html>

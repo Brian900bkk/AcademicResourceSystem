@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Admin Dashboard</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </header>
+
+        <section class="welcome">
+            <h2>Welcome Super Admin</h2>
+            <p>Manage users, oversee resources, and configure system settings.</p>
+        </section>
+
+        <!-- User Management -->
+        <section>
+            <h2>User Management</h2>
+            <p>Here you can view, edit, or remove users.</p>
+            <div id="userList"></div>
+        </section>
+
+        <!-- System Settings -->
+        <section>
+            <h2>System Settings</h2>
+            <p>Configure application-wide settings here.</p>
+        </section>
+    </div>
+
+    <script>
+    async function loadUsers() {
+        try {
+            const res = await fetch("/users");
+            if (!res.ok) {
+                document.getElementById("userList").innerHTML = "<p>Failed to load users</p>";
+                return;
+            }
+
+            const data = await res.json();
+            const userList = document.getElementById("userList");
+            userList.innerHTML = "";
+
+            if (data.length === 0) {
+                userList.innerHTML = "<p>No users found</p>";
+                return;
+            }
+
+            data.forEach(user => {
+                const div = document.createElement("div");
+                div.classList.add("user-card");
+                div.innerHTML = `
+                    <p><b>${user.name}</b> (${user.email})</p>
+                    <p>Role: ${user.role}</p>
+                `;
+                userList.appendChild(div);
+            });
+        } catch (err) {
+            console.error("Error loading users:", err);
+            document.getElementById("userList").innerHTML = "<p>Error loading users</p>";
+        }
+    }
+
+    loadUsers();
+    </script>
+</body>
+</html>
