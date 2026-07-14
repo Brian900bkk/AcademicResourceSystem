@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Admin Dashboard</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </header>
+
+        <!-- System Stats -->
+        <section class="stats">
+            <h2>System Stats</h2>
+            <div id="stats"></div>
+        </section>
+
+        <!-- User Management -->
+        <section class="users">
+            <h2>User Management</h2>
+            <div id="userList"></div>
+            <button onclick="showCreateUserForm()">Create User</button>
+            <div id="createUserForm" style="display:none;"></div>
+        </section>
+
+        <!-- Invitation Codes -->
+        <section class="codes">
+            <h2>Invitation Codes</h2>
+            <button onclick="generateCode()">Generate Code</button>
+            <div id="codeList"></div>
+        </section>
+    </div>
+
+    <script>
+    // Load stats
+    async function loadStats() {
+        const res = await fetch("/stats");
+        const data = await res.json();
+        document.getElementById("stats").innerHTML = `
+            <p>Total Students: ${data.totalStudents}</p>
+            <p>Total Resources: ${data.totalResources}</p>
+        `;
+    }
+
+    // Load users
+    async function loadUsers() {
+        const res = await fetch("/users"); // backend route needed
+        const data = await res.json();
+        const userDiv = document.getElementById("userList");
+        userDiv.innerHTML = "";
+        data.forEach(u => {
+            userDiv.innerHTML += `
+                <p>${u.name} (${u.email}) - Role: ${u.role}
+                <button onclick="deleteUser(${u.id})">Delete</button></p>
+            `;
+        });
+    }
+
+    // Show create user form
+    function showCreateUserForm() {
+        document.getElementById("createUserForm").style.display = "block";
+        document.getElementById("createUserForm").innerHTML = `
+            <form onsubmit="createUser(event)">
+                <input type="text" id="newName" placeholder="Name" required>
+                <input type="email" id="newEmail" placeholder="Email" required>
+                <input type="password" id="newPassword" placeholder="Password" required>
+                <select id="newRole">
+                    <option value="manager">Manager</option>
+                    <option value="super_admin">Super Admin</option>
+                </select>
+                <button type="submit">Create</button>
+            </form>
+        `;
+    }
+
+    async function createUser(e) {
+        e.preventDefault();
+        const name = document.getElementById("newName").value;
+        const email = document.getElementById("newEmail").value;
+        const password = document.getElementById("newPassword").value;
+        const role = document.getElementById("newRole").value;
+
+        const res = await fetch("/create-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password, role })
+        });
+        const data = await res.json();
+        alert(data.message);
+        loadUsers();
+    }
+
+    async function deleteUser(id) {
+        const res = await fetch(`/delete-user/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        alert(data.message);
+        loadUsers();
+    }
+
+    // Invitation codes
+    async function generateCode() {
+        const res = await fetch("/generate-code", { method: "POST" });
+        const data = await res.json();
+        alert("New code: " + data.code);
+        await loadCodes();
+    }
+    
+    async function loadCodes() {
+        const res = await fetch("/invitation-codes");
+        const data = await res.json();
+        const codeDiv = document.getElementById("codeList");
+        codeDiv.innerHTML = "";
+        data.forEach(c => {
+            codeDiv.innerHTML += `
+                <p>${c.code} - ${c.status}
+                <button onclick="copyCode('${c.code}')">Copy</button>
+                <button onclick="revokeCode(${c.id})">Revoke</button></p>
+            `;
+        });
+    }
+
+    async function revokeCode(id) {
+        const res = await fetch(`/invitation-codes/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        alert(data.message);
+        loadCodes();
+    }
+
+    // Copy code to clipboard
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            alert("Code copied: " + code);
+        });
+    }
+
+    // Initial load
+    loadStats();
+    loadUsers();
+    loadCodes();
+    </script>
+</body>
+</html>

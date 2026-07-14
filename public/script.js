@@ -1,104 +1,110 @@
-// =======================
-// Register with validation
-// =======================
+
 document.getElementById("registerForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const name = document.getElementById("name").value.trim();
     const email = document.getElementById("registerEmail").value.trim();
     const password = document.getElementById("registerPassword").value;
-    const confirmPassword = document.getElementById("confirmPassword")?.value; // add confirm field in HTML
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const role = document.getElementById("role").value;
 
-    const messageDiv = document.getElementById("registerMessage");
+    const msg = document.getElementById("registerMessage");
 
-    // Custom validation
-    if (name.length < 2) {
-        messageDiv.textContent = "Name must be at least 2 characters.";
-        messageDiv.style.color = "red";
-        return;
-    }
-    if (!email.includes("@") || !email.includes(".")) {
-        messageDiv.textContent = "Please enter a valid email address.";
-        messageDiv.style.color = "red";
-        return;
-    }
-    if (password.length < 6) {
-        messageDiv.textContent = "Password must be at least 6 characters.";
-        messageDiv.style.color = "red";
-        return;
-    }
-    if (confirmPassword && password !== confirmPassword) {
-        messageDiv.textContent = "Passwords do not match.";
-        messageDiv.style.color = "red";
+    if (password !== confirmPassword) {
+        msg.innerText = "Passwords do not match!";
+        msg.style.color = "red";
         return;
     }
 
-    // Proceed with backend call
-    const response = await fetch("/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
-    });
+    try {
+        const res = await fetch("/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password, role })
+        });
 
-    const result = await response.json();
-    messageDiv.textContent = result.message;
-    messageDiv.style.color = response.ok ? "green" : "red";
+        const data = await res.json();
+        if (!res.ok) {
+            msg.innerText = data.message;
+            msg.style.color = "red";
+            return;
+        }
 
-    if (response.ok) {
-        setTimeout(() => { window.location.href = "/login"; }, 1500);
+        msg.innerText = data.message;
+        msg.style.color = "green";
+
+        setTimeout(() => {
+            window.location.href = "/login";
+        }, 1500);
+
+    } catch (err) {
+        console.error("Register error:", err);
+        msg.innerText = "Server error";
+        msg.style.color = "red";
     }
 });
 
 // =======================
-// Login
+// LOGIN
 // =======================
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
 
-    const messageDiv = document.getElementById("loginMessage");
+    const msg = document.getElementById("loginMessage");
 
-    // Validation
-    if (!email.includes("@") || !email.includes(".")) {
-        messageDiv.textContent = "Please enter a valid email address.";
-        messageDiv.style.color = "red";
-        return;
-    }
-    if (password.length < 6) {
-        messageDiv.textContent = "Password must be at least 6 characters.";
-        messageDiv.style.color = "red";
-        return;
-    }
+    try {
+        const res = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
 
-    const response = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    });
+        const data = await res.json();
 
-    const result = await response.json();
-    messageDiv.textContent = result.message;
-    messageDiv.style.color = response.ok ? "green" : "red";
+        if (!res.ok) {
+            msg.innerText = data.message;
+            msg.style.color = "red";
+            return;
+        }
 
-    if (response.ok) {
-        setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
+        // Save role in sessionStorage
+        sessionStorage.setItem("role", data.role);
+
+        msg.innerText = "Login successful!";
+        msg.style.color = "green";
+
+        setTimeout(() => {
+            // Redirect based on role
+            if (data.role === "super_admin") {
+                window.location.href = "/admin-dashboard";
+            } else if (data.role === "manager") {
+                window.location.href = "/manager-dashboard";
+            } else {
+                window.location.href = "/dashboard";
+            }
+        }, 1000);
+
+    } catch (err) {
+        console.error("Login error:", err);
+        msg.innerText = "Server error";
+        msg.style.color = "red";
     }
 });
 
 // =======================
-// Upload Notes
+// UPLOAD
 // =======================
 document.getElementById("uploadNotesForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const title = document.getElementById("noteTitle").value.trim();
     const file = document.getElementById("noteFile").files[0];
 
-    if (!title) {
-        alert("Please enter a resource title.");
-        return;
-    }
-    if (!file) {
-        alert("Please select a file to upload.");
+    if (!title || !file) {
+        alert("Please provide a title and select a file.");
         return;
     }
 
@@ -106,68 +112,75 @@ document.getElementById("uploadNotesForm")?.addEventListener("submit", async (e)
     formData.append("title", title);
     formData.append("file", file);
 
-    const response = await fetch("/upload", {
-        method: "POST",
-        body: formData
-    });
-
-    const result = await response.json();
-    alert(result.message);
+    try {
+        const res = await fetch("/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        alert(data.message);
+    } catch (err) {
+        console.error("Upload error:", err);
+        alert("Upload failed");
+    }
 });
 
 // =======================
-// Search Resources
+// SEARCH
 // =======================
 document.getElementById("searchForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const queryInput = document.getElementById("searchQuery");
-    const query = queryInput.value.trim();
-    if (!query) {
-        alert("Please enter a search term.");
-        return;
+
+    const query = document.getElementById("searchQuery").value.trim();
+    if (!query) return;
+
+    try {
+        const res = await fetch(`/search?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.innerHTML = "";
+
+        if (data.length === 0) {
+            resultsDiv.innerHTML = "<p>No results found</p>";
+            return;
+        }
+
+        data.forEach(item => {
+            const div = document.createElement("div");
+            div.classList.add("resource-card");
+            div.innerHTML = `
+                <p><b>${item.title || "Untitled"}</b></p>
+                <p>${item.original_name}</p>
+                <button onclick="downloadFile(${item.id})">Download</button>
+            `;
+            resultsDiv.appendChild(div);
+        });
+    } catch (err) {
+        console.error("Search error:", err);
+        alert("Search failed");
     }
-
-    const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
-    const results = await response.json();
-
-    const resultsContainer = document.getElementById("results");
-    resultsContainer.innerHTML = "";
-
-    if (results.length === 0) {
-        resultsContainer.innerHTML = "<p>No resources found.</p>";
-        return;
-    }
-
-    results.forEach(resource => {
-        const item = document.createElement("div");
-        item.classList.add("resource-item");
-
-        item.innerHTML = `
-            <p><strong>${resource.title || "Untitled"}</strong></p>
-            <p>${resource.original_name}</p>
-            <button onclick="downloadFile(${resource.id})">Download</button>
-        `;
-        resultsContainer.appendChild(item);
-    });
-
-    queryInput.value = "";
 });
 
 // =======================
-// Download File
+// DOWNLOAD
 // =======================
-const downloadFile = async (id) => {
-    const response = await fetch(`/download/${id}`);
-    if (response.ok) {
-        const blob = await response.blob();
+async function downloadFile(id) {
+    try {
+        const res = await fetch(`/download/${id}`);
+        if (!res.ok) {
+            alert("Download failed");
+            return;
+        }
+
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
+
         const a = document.createElement("a");
         a.href = url;
         a.download = "";
         document.body.appendChild(a);
         a.click();
         a.remove();
-    } else {
-        alert("Download failed.");
+    } catch (err) {
+        console.error("Download error:", err);
+        alert("Download failed");
     }
-};
+}

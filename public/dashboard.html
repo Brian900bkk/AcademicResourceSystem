@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Academic Resource Sharing System</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="dashboard">
-
     <header>
         <h1>Academic Resource Sharing System</h1>
         <a href="/logout" class="logout-btn">Logout</a>
     </header>
 
     <section class="welcome">
-        <h2>Welcome Student</h2>
+        <h2 id="welcomeTitle">Welcome Students</h2>
         <p>Manage and share academic resources.</p>
     </section>
 
-    <section class="stats">
+    <!-- Stats -->
+    <div class="stats">
         <div class="card">
             <h3>Total Students</h3>
             <p id="totalStudents">0</p>
@@ -27,64 +27,56 @@
             <h3>Total Resources</h3>
             <p id="totalResources">0</p>
         </div>
-    </section>
+    </div>
 
-    <section class="upload-section">
-        <h2>Upload Notes</h2>
-        <form id="uploadNotesForm" enctype="multipart/form-data">
+    <!-- Upload -->
+    <div class="upload-section">
+        <h3>Upload Notes</h3>
+        <form id="uploadNotesForm">
             <input type="text" id="noteTitle" placeholder="Resource Title" required>
             <input type="file" id="noteFile" required>
             <button type="submit">Upload Resource</button>
         </form>
-    </section>
+    </div>
 
-    <section class="search-section">
-        <h2>Search Resources</h2>
+    <!-- Search -->
+    <div class="search-section">
+        <h3>Search Resources</h3>
         <form id="searchForm">
-            <input type="text" id="searchQuery" placeholder="Search resources..." required>
+            <input type="text" id="searchQuery" placeholder="Search..." required>
             <button type="submit">Search</button>
         </form>
-    </section>
-
-    <section>
-        <h2>Search Results</h2>
         <div id="results"></div>
-    </section>
-    <section class="stats">
-    <div class="card" id="studentsCard">
-        <h3>Total Students</h3>
-        <p id="totalStudents">0</p>
     </div>
-    <div class="card">
-        <h3>Total Resources</h3>
-        <p id="totalResources">0</p>
-    </div>
-</section>
-
-<section>
-    <h2>Student List</h2>
-    <div id="studentsList"></div>
-</section>
-
-
 </div>
 
 <script src="script.js"></script>
 
 <script>
+// Role display
+const role = sessionStorage.getItem("role");
+if (!role) {
+    window.location.href = "/login";
+}
+let roleDisplay = "Student";
+if (role === "super_admin") roleDisplay = "Super Admin";
+else if (role === "manager") roleDisplay = "Manager";
+else if (role === "client") roleDisplay = "Client";
+document.getElementById("welcomeTitle").innerText = "Welcome " + roleDisplay;
+
+// Load stats
 async function loadStats() {
     try {
-        const response = await fetch("/stats");
-        if (!response.ok) return;
-
-        const data = await response.json();
-        document.getElementById("totalStudents").textContent = data.totalStudents;
-        document.getElementById("totalResources").textContent = data.totalResources;
+        const res = await fetch("/stats");
+        const data = await res.json();
+        document.getElementById("totalStudents").innerText = data.totalStudents;
+        document.getElementById("totalResources").innerText = data.totalResources;
     } catch (err) {
-        console.error("Stats load error:", err);
+        console.error("Stats error:", err);
     }
 }
 loadStats();
+setInterval(loadStats, 30000);
 </script>
 
 </body>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manager Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Manager Dashboard</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </header>
+
+        <section class="welcome">
+            <h2>Welcome Manager</h2>
+            <p>Approve uploads, monitor stats, and manage resources.</p>
+        </section>
+        <section>
+            <h2>All Uploaded Resources</h2>
+            <label for="filter">Filter:</label>
+            <select id="filter" onchange="loadResources()">
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+            </select>
+          
+            <input type="text" id="searchBox" placeholder="Search by title, description, or file name" onkeyup="loadResources()">
+          
+            <div id="resourceList"></div>
+          </section>
+          
+          <script>
+          async function loadResources() {
+              const filter = document.getElementById("filter").value;
+              const query = document.getElementById("searchBox").value.trim();
+          
+              let url = "/resources";
+              const params = [];
+              if (filter !== "all") params.push(`status=${filter}`);
+              if (query) params.push(`q=${encodeURIComponent(query)}`);
+              if (params.length > 0) url += "?" + params.join("&");
+          
+              try {
+                  const res = await fetch(url);
+                  const data = await res.json();
+                  const resourceDiv = document.getElementById("resourceList");
+                  resourceDiv.innerHTML = "";
+          
+                  if (data.length === 0) {
+                      resourceDiv.innerHTML = "<p>No resources found</p>";
+                      return;
+                  }
+          
+                  data.forEach(item => {
+                      const div = document.createElement("div");
+                      div.classList.add("resource-card");
+                      div.innerHTML = `
+                          <p><b>${item.title || "Untitled"}</b></p>
+                          <p>${item.description || "No description"}</p>
+                          <p>${item.original_name}</p>
+                          <p>Status: ${item.approved ? "Approved" : "Pending"}</p>
+                          <button onclick="approveResource(${item.id})" ${item.approved ? "disabled" : ""}>Approve</button>
+                          <button onclick="showEditForm(${item.id}, '${item.title}', '${item.description || ""}')">Edit</button>
+                          <button onclick="deleteResource(${item.id})">Delete</button>
+                      `;
+                      resourceDiv.appendChild(div);
+                  });
+              } catch (err) {
+                  console.error("Load resources error:", err);
+                  document.getElementById("resourceList").innerHTML = "<p>Error loading resources</p>";
+              }
+          }
+          
+          loadResources();
+          </script>
+          
+
+    <script>
+    // Load pending uploads
+    async function loadPendingUploads() {
+        try {
+            const res = await fetch("/pending-uploads");
+            if (!res.ok) {
+                document.getElementById("pendingUploads").innerHTML = "<p>Failed to load pending uploads</p>";
+                return;
+            }
+
+            const data = await res.json();
+            const pendingDiv = document.getElementById("pendingUploads");
+            pendingDiv.innerHTML = "";
+
+            if (data.length === 0) {
+                pendingDiv.innerHTML = "<p>No pending uploads</p>";
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.classList.add("upload-card");
+                div.innerHTML = `
+                    <p><b>${item.title || "Untitled"}</b></p>
+                    <p>${item.original_name}</p>
+                    <button onclick="approveUpload(${item.id})">Approve</button>
+                `;
+                pendingDiv.appendChild(div);
+            });
+        } catch (err) {
+            console.error("Error loading pending uploads:", err);
+        }
+    }
+
+    // Approve upload
+    async function approveUpload(id) {
+        try {
+            const res = await fetch(`/approve-upload/${id}`, { method: "POST" });
+            const data = await res.json();
+            alert(data.message);
+            loadPendingUploads();
+            loadResources();
+        } catch (err) {
+            console.error("Error approving upload:", err);
+        }
+    }
+
+    // Load all resources
+    async function loadResources() {
+        try {
+            const res = await fetch("/resources");
+            if (!res.ok) {
+                document.getElementById("resourceList").innerHTML = "<p>Failed to load resources</p>";
+                return;
+            }
+
+            const data = await res.json();
+            const resourceDiv = document.getElementById("resourceList");
+            resourceDiv.innerHTML = "";
+
+            if (data.length === 0) {
+                resourceDiv.innerHTML = "<p>No resources available</p>";
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.classList.add("resource-card");
+                div.innerHTML = `
+                    <p><b>${item.title || "Untitled"}</b></p>
+                    <p>${item.original_name}</p>
+                    <button onclick="deleteResource(${item.id})">Delete</button>
+                `;
+                resourceDiv.appendChild(div);
+            });
+        } catch (err) {
+            console.error("Error loading resources:", err);
+        }
+    }
+
+    // Delete resource
+    async function deleteResource(id) {
+        try {
+            const res = await fetch(`/delete-resource/${id}`, { method: "DELETE" });
+            const data = await res.json();
+            alert(data.message);
+            loadResources();
+        } catch (err) {
+            console.error("Error deleting resource:", err);
+        }
+    }
+
+    // Initial load
+    loadPendingUploads();
+    loadResources();
+    </script>
+    <div id="resourceList"></div>
+
+<script>
+async function loadResources() {
+    const res = await fetch("/resources");
+    const data = await res.json();
+    const resourceDiv = document.getElementById("resourceList");
+    resourceDiv.innerHTML = "";
+
+    data.forEach(item => {
+        const div = document.createElement("div");
+        div.classList.add("resource-card");
+        div.innerHTML = `
+            <p><b>${item.title || "Untitled"}</b></p>
+            <p>${item.description || "No description"}</p>
+            <p>${item.original_name}</p>
+            <button onclick="showEditForm(${item.id}, '${item.title}', '${item.description || ""}')">Edit</button>
+            <button onclick="deleteResource(${item.id})">Delete</button>
+        `;
+        resourceDiv.appendChild(div);
+    });
+}
+
+function showEditForm(id, currentTitle, currentDescription) {
+    const formHtml = `
+        <form id="editForm-${id}" enctype="multipart/form-data">
+            <input type="text" name="title" value="${currentTitle}" required>
+            <textarea name="description">${currentDescription}</textarea>
+            <input type="file" name="file">
+            <button type="submit">Save Changes</button>
+        </form>
+    `;
+    document.getElementById("resourceList").insertAdjacentHTML("beforeend", formHtml);
+
+    document.getElementById(`editForm-${id}`).addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        const res = await fetch(`/update-resource/${id}`, {
+            method: "PUT",
+            body: formData
+        });
+
+        const data = await res.json();
+        alert(data.message);
+        loadResources();
+    });
+}
+</script>
+<div id="resourceList"></div>
+
+<script>
+async function loadResources() {
+    const res = await fetch("/resources");
+    const data = await res.json();
+    const resourceDiv = document.getElementById("resourceList");
+    resourceDiv.innerHTML = "";
+
+    if (data.length === 0) {
+        resourceDiv.innerHTML = "<p>No resources found</p>";
+        return;
+    }
+
+    data.forEach(item => {
+        const div = document.createElement("div");
+        div.classList.add("resource-card");
+        div.innerHTML = `
+            <p><b>${item.title || "Untitled"}</b></p>
+            <p>${item.description || "No description"}</p>
+            <p>${item.original_name}</p>
+            <p>Status: ${item.approved ? "Approved" : "Pending"}</p>
+            <button onclick="approveResource(${item.id})" ${item.approved ? "disabled" : ""}>Approve</button>
+            <button onclick="showEditForm(${item.id}, '${item.title}', '${item.description || ""}')">Edit</button>
+            <button onclick="deleteResource(${item.id})">Delete</button>
+        `;
+        resourceDiv.appendChild(div);
+    });
+}
+
+// Approve resource
+async function approveResource(id) {
+    const res = await fetch(`/approve-upload/${id}`, { method: "POST" });
+    const data = await res.json();
+    alert(data.message);
+    loadResources();
+}
+
+// Edit resource (title + description + optional file)
+function showEditForm(id, currentTitle, currentDescription) {
+    const formHtml = `
+        <form id="editForm-${id}" enctype="multipart/form-data">
+            <input type="text" name="title" value="${currentTitle}" required>
+            <textarea name="description">${currentDescription}</textarea>
+            <input type="file" name="file">
+            <button type="submit">Save Changes</button>
+        </form>
+    `;
+    document.getElementById("resourceList").insertAdjacentHTML("beforeend", formHtml);
+
+    document.getElementById(`editForm-${id}`).addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        const res = await fetch(`/update-resource/${id}`, {
+            method: "PUT",
+            body: formData
+        });
+
+        const data = await res.json();
+        alert(data.message);
+        loadResources();
+    });
+}
+
+// Delete resource
+async function deleteResource(id) {
+    const res = await fetch(`/delete-resource/${id}`, { method: "DELETE" });
+    const data = await res.json();
+    alert(data.message);
+    loadResources();
+}
+
+// Load resources on page load
+loadResources();
+</script>
+
+
+</body>
+</html>

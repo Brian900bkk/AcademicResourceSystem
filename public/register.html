@@ -12,11 +12,60 @@
             <input type="email" id="registerEmail" name="email" placeholder="Email" required>
             <input type="password" id="registerPassword" name="password" placeholder="Password" required>
             <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+
+            <!-- Role dropdown -->
+            <select id="role" name="role" required>
+                <option value="student" selected>Student</option>
+                <option value="manager">Manager</option>
+                <option value="super_admin">Super Admin</option>
+            </select>
+
+            <!-- Invitation code field (hidden by default) -->
+            <div id="invitationCodeField" style="display:none;">
+                <input type="text" id="invitationCode" name="invitationCode" placeholder="Enter invitation code">
+            </div>
+
             <button type="submit">Register</button>
-            <div id="registerMessage"></div>
+            <p id="registerMessage"></p>
         </form>
         <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+    // Show/hide invitation code field based on role
+    document.getElementById("role").addEventListener("change", function() {
+        if (this.value === "manager" || this.value === "super_admin") {
+            document.getElementById("invitationCodeField").style.display = "block";
+        } else {
+            document.getElementById("invitationCodeField").style.display = "none";
+        }
+    });
+
+    // Handle form submission
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("registerEmail").value;
+        const password = document.getElementById("registerPassword").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        const role = document.getElementById("role").value;
+        const invitationCode = document.getElementById("invitationCode") ? document.getElementById("invitationCode").value : "";
+
+        if (password !== confirmPassword) {
+            document.getElementById("registerMessage").textContent = "Passwords do not match!";
+            return;
+        }
+
+        const res = await fetch("/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password, role, invitationCode })
+        });
+
+        const data = await res.json();
+        document.getElementById("registerMessage").textContent = data.message;
+    });
+    </script>
 </body>
 </html>
