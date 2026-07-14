@@ -7,6 +7,7 @@
 <body>
 
 <div class="dashboard">
+
     <header>
         <h1>Academic Resource Sharing System</h1>
         <a href="/logout" class="logout-btn">Logout</a>
@@ -17,67 +18,156 @@
         <p>Manage and share academic resources.</p>
     </section>
 
-    <!-- Stats -->
+    <!-- Statistics -->
     <div class="stats">
+
         <div class="card">
             <h3>Total Students</h3>
             <p id="totalStudents">0</p>
         </div>
+
         <div class="card">
             <h3>Total Resources</h3>
             <p id="totalResources">0</p>
         </div>
+
     </div>
 
     <!-- Upload -->
     <div class="upload-section">
+
         <h3>Upload Notes</h3>
+
         <form id="uploadNotesForm">
-            <input type="text" id="noteTitle" placeholder="Resource Title" required>
-            <input type="file" id="noteFile" required>
-            <button type="submit">Upload Resource</button>
+
+            <input
+                type="text"
+                id="noteTitle"
+                placeholder="Resource Title"
+                required>
+
+            <input
+                type="file"
+                id="noteFile"
+                required>
+
+            <button type="submit">
+                Upload Resource
+            </button>
+
         </form>
+
     </div>
 
     <!-- Search -->
+
     <div class="search-section">
+
         <h3>Search Resources</h3>
+
         <form id="searchForm">
-            <input type="text" id="searchQuery" placeholder="Search..." required>
-            <button type="submit">Search</button>
+
+            <input
+                type="text"
+                id="searchQuery"
+                placeholder="Search..."
+                required>
+
+            <button type="submit">
+                Search
+            </button>
+
         </form>
+
         <div id="results"></div>
+
     </div>
+
 </div>
 
-<script src="script.js"></script>
+<!-- PDF Preview Modal -->
+
+<div id="pdfModal" class="modal">
+
+    <div class="modal-content">
+
+        <span class="close" onclick="closePDF()">&times;</span>
+
+        <h2 id="pdfTitle"></h2>
+
+        <iframe
+            id="pdfViewer"
+            width="100%"
+            height="600"
+            frameborder="0">
+        </iframe>
+
+        <br><br>
+
+        <a id="downloadBtn">
+            <button>
+                ⬇ Download PDF
+            </button>
+        </a>
+
+    </div>
+
+</div>
 
 <script>
 // Role display
+
 const role = sessionStorage.getItem("role");
+
 if (!role) {
     window.location.href = "/login";
 }
-let roleDisplay = "Student";
-if (role === "super_admin") roleDisplay = "Super Admin";
-else if (role === "manager") roleDisplay = "Manager";
-else if (role === "client") roleDisplay = "Client";
-document.getElementById("welcomeTitle").innerText = "Welcome " + roleDisplay;
 
-// Load stats
+let roleDisplay = "Student";
+
+if (role === "super_admin")
+    roleDisplay = "Super Admin";
+
+else if (role === "manager")
+    roleDisplay = "Manager";
+
+document.getElementById("welcomeTitle").innerText =
+    "Welcome " + roleDisplay;
+
+
+// Load statistics
+
 async function loadStats() {
+
     try {
+
         const res = await fetch("/stats");
+
         const data = await res.json();
-        document.getElementById("totalStudents").innerText = data.totalStudents;
-        document.getElementById("totalResources").innerText = data.totalResources;
-    } catch (err) {
-        console.error("Stats error:", err);
+
+        document.getElementById("totalStudents").innerText =
+            data.totalStudents;
+
+        document.getElementById("totalResources").innerText =
+            data.totalResources;
+
     }
+
+    catch (err) {
+
+        console.error(err);
+
+    }
+
 }
+
 loadStats();
+
 setInterval(loadStats, 30000);
+
 </script>
+
+<script src="script.js"></script>
 
 </body>
 </html>
